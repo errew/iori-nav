@@ -164,11 +164,23 @@ if (importFile) {
       reader.onload = function (event) {
         try {
           const data = JSON.parse(event.target.result);
+          let previewData = { category: [], sites: [] };
 
-          // 简单确认后直接导入
-          if (confirm('确定要导入这个 JSON 文件中的书签吗？')) {
-            performImport(data);
+          if (Array.isArray(data)) {
+              // Old format
+              previewData.sites = data;
+              // Extract categories naively for preview if possible, or just leave empty
+              // showImportPreview expects category array for tree.
+              // If empty, items might fall into root or mapped by ID? 
+              // Old format uses 'catelog' name. showImportPreview builds tree from IDs.
+              // So old format preview might be broken in tree view but stats will be fine.
+              // Let's wrap it simply.
+          } else if (data.category && data.sites) {
+              // New format
+              previewData = data;
           }
+
+          showImportPreview(previewData);
         } catch (error) {
           showMessage('JSON 文件解析失败: ' + error.message, 'error');
         }
@@ -414,9 +426,12 @@ function showImportPreview(result) {
         <p style="margin-top: 15px; color: #6c757d; font-size: 0.9rem;">
           注意: 将按照层级结构导入。若分类已存在（名称和父级匹配），将合并。
         </p>
-        <div style="margin-top: 10px; display: flex; align-items: center;">
-            <input type="checkbox" id="importOverride" style="margin-right: 8px;">
-            <label for="importOverride" style="font-size: 0.9rem; color: #333; cursor: pointer;">覆盖已存在书签 (根据 URL 判断)</label>
+        <div style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef;">
+            <label for="importOverride" style="font-size: 0.9rem; color: #333; cursor: pointer; font-weight: 500;">覆盖已存在书签 (根据 URL 判断)</label>
+            <label class="switch">
+                <input type="checkbox" id="importOverride">
+                <span class="slider round"></span>
+            </label>
         </div>
       </div>
       <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
