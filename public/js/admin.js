@@ -414,6 +414,10 @@ function showImportPreview(result) {
         <p style="margin-top: 15px; color: #6c757d; font-size: 0.9rem;">
           注意: 将按照层级结构导入。若分类已存在（名称和父级匹配），将合并。
         </p>
+        <div style="margin-top: 10px; display: flex; align-items: center;">
+            <input type="checkbox" id="importOverride" style="margin-right: 8px;">
+            <label for="importOverride" style="font-size: 0.9rem; color: #333; cursor: pointer;">覆盖已存在书签 (根据 URL 判断)</label>
+        </div>
       </div>
       <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
         <button id="cancelImport" class="px-5 py-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">取消</button>
@@ -433,8 +437,9 @@ function showImportPreview(result) {
   });
 
   document.getElementById('confirmImport').addEventListener('click', () => {
+    const override = document.getElementById('importOverride').checked;
     document.body.removeChild(previewModal);
-    performImport(result);
+    performImport(result, override);
   });
   
    previewModal.addEventListener('click', (e) => {
@@ -445,15 +450,20 @@ function showImportPreview(result) {
 }
 
 // 执行导入
-function performImport(dataToImport) {
+function performImport(dataToImport, override = false) {
   showMessage('正在导入,请稍候...', 'info');
+
+  const payload = {
+      ...dataToImport,
+      override: override
+  };
 
   fetch('/api/config/import', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(dataToImport)
+    body: JSON.stringify(payload)
   }).then(res => res.json())
     .then(data => {
       if (data.code === 201 || data.code === 200) {
